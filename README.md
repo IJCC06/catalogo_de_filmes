@@ -1,5 +1,4 @@
-﻿
-# Documento de Requisitos — Projeto Catálogo de Filmes
+﻿# Documento de Requisitos — Projeto Catálogo de Filmes
 
 ## 1. Introdução
 
