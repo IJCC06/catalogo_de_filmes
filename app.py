@@ -7,6 +7,7 @@ app = Flask(__name__)
 def home():
     return "<h1>Hello World!</h1>"
 
+
 @app.route('/usuario', methods=['GET'])
 def buscar_usuario():
     usuario = {
@@ -16,17 +17,40 @@ def buscar_usuario():
     }
     return usuario
 
-@app.route('/produto', methods=['POST'])
+
+@app.route('/filme', methods=['POST'])
 def cadastrar_produto():
     dados = request.get_json()
     if not dados:
         return jsonify({"erro": "Dados Inválidos"}), 400
 
-    print(f"Novo Produto: {dados}")
+    print(f"Novo Filme: {dados}")
+
+    conn = criar_conexao()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO filmes (
+            id_usuario,
+            titulo,
+            ano_lancamento,
+            genero,
+            nota,
+            capa_url)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id_filmes
+    """, (dados['usuario_id'], dados['titulo'], dados['ano_lancamento'], dados['genero'],
+          dados['nota'], dados['capa_url']))
+
+    novo_id = cursor.fetchone()[0]
+    conn.commit()
+    conn.close()
+
     return jsonify({
-        "message": "Produto Salvo com Sucesso!",
-        "produto_cadastrado": dados
-    }), 200
+        "message": "Filme Salvo com Sucesso!",
+        "filme_id": novo_id
+    }), 201
+
 
 @app.route('/produto', methods=['PUT'])
 def atualizar_produto():
