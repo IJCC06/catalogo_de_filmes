@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from database import criar_conexao
 
 app = Flask(__name__)
 
@@ -47,6 +48,14 @@ def atualizar_produto():
         return jsonify({"message": "Produto Atualizado com sucesso!"}), 201
     else:
         return jsonify({"message": "Produto não Encontrado!"}), 404
+
+
+@app.route('/teste/db', methods=['GET'])
+def testar_conexao():
+    conn = criar_conexao()
+    print('Testando conexão: ', conn)
+    conn.close()
+    return jsonify({"message": "Banco conectado com sucesso!"}), 200
 
 
 if __name__ == "__main__":
