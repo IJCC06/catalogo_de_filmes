@@ -1,25 +1,25 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+from psycopg2.extras import RealDictCursor
 from database import criar_conexao
 
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return "<h1>Hello World!</h1>"
 
+@app.route('/', methods=['GET'])
+def listar_filmes():
+    conn = criar_conexao()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-@app.route('/usuario', methods=['GET'])
-def buscar_usuario():
-    usuario = {
-        "nome": "Gabriel",
-        "idade": 16,
-        "telefone": "(19) 998174818"
-    }
-    return usuario
+    cursor.execute("SELECT * FROM filmes")
+    resposta = cursor.fetchall()
+
+    conn.close()
+
+    return render_template("index.html", filmes=resposta)
 
 
 @app.route('/filme', methods=['POST'])
-def cadastrar_produto():
+def cadastrar_filme():
     dados = request.get_json()
     if not dados:
         return jsonify({"erro": "Dados Inválidos"}), 400
@@ -47,31 +47,9 @@ def cadastrar_produto():
     conn.close()
 
     return jsonify({
-        "message": "Filme Salvo com Sucesso!",
+        "message": "Filme Cadastrado com Sucesso!",
         "filme_id": novo_id
     }), 201
-
-
-@app.route('/produto', methods=['PUT'])
-def atualizar_produto():
-    produto = {
-        "id": 1,
-        "nome": "Caneta Azul",
-        "preco": 1.50,
-        "descricao": "Caneta esferográfica de cor azul",
-        "marca": "Bic"
-    }
-    dados = request.get_json()
-
-    if not dados:
-        return jsonify({"erro": "Dados inválidos"}), 400
-
-    if dados['id'] == produto['id']:
-        produto = dados
-        print(f"Produto Atualizado: {produto}")
-        return jsonify({"message": "Produto Atualizado com sucesso!"}), 201
-    else:
-        return jsonify({"message": "Produto não Encontrado!"}), 404
 
 
 @app.route('/teste/db', methods=['GET'])
