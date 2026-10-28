@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from psycopg2.extras import RealDictCursor
 from database import criar_conexao
 
@@ -18,38 +18,42 @@ def listar_filmes():
     return render_template("index.html", filmes=resposta)
 
 
-@app.route('/filme', methods=['POST'])
-def cadastrar_filme():
-    dados = request.get_json()
-    if not dados:
-        return jsonify({"erro": "Dados Inválidos"}), 400
+@app.route('/deletar/<int:id>', methods=['POST'])
+def deletar_filme(id):
+    con = criar_conexao()
+    cursor = con.cursor()
+    cursor.execute("DELETE FROM filmes WHERE id = %s", (id,))
+    con.commit()
+    con.close()
+    return redirect(url_for("listar_filmes"))
 
-    print(f"Novo Filme: {dados}")
 
-    conn = criar_conexao()
-    cursor = conn.cursor()
+@app.route('/novo', methods=["GET", "POST"])
+def novo_filme():
+    if request.method == "POST":
+        titulo = request.form["titulo"]
+        genero = request.form["genero"]
+        capa_url = request.form["capa"]
+        nota = request.form["nota"]
+        ano_lancamento = request.form["ano_lancamento"]
+        id_usuario = 1
 
-    cursor.execute("""
-        INSERT INTO filmes (
-            id_usuario,
-            titulo,
-            ano_lancamento,
-            genero,
-            nota,
-            capa_url)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        RETURNING id_filmes
-    """, (dados['usuario_id'], dados['titulo'], dados['ano_lancamento'], dados['genero'],
-          dados['nota'], dados['capa_url']))
+        parametros = [titulo, genero, capa_url, nota, ano_lancamento, id_usuario]
 
-    novo_id = cursor.fetchone()[0]
-    conn.commit()
-    conn.close()
+        sql ='''
+            INSERT INTO filmes (titulo, genero, capa_url, nota, ano_lancamento, id_usuario)
+            VALUES
+            (%s, %s, %s, %s, %s, %s)
+        '''
 
-    return jsonify({
-        "message": "Filme Cadastrado com Sucesso!",
-        "filme_id": novo_id
-    }), 201
+        con = criar_conexao()
+        cursor = con.cursor()
+        cursor.execute(sql, parametros)
+        con.commit()
+        con.close()
+        return redirect(url_for("listar_filmes"))
+
+    return render_template("novo_filme.html")
 
 
 @app.route('/teste/db', methods=['GET'])
